@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10111a"><meta name="description" content="A personal notice period countdown tracker">
+<link rel="manifest" href="./manifest.json"><link rel="icon" href="./icons/icon-192.png">
+<title>Notice Period Escape</title>
+<style>
+*{box-sizing:border-box}body{margin:0;padding:16px;background:#10111a;color:#f5f5f7;font-family:system-ui,Arial,sans-serif}.app{max-width:680px;margin:auto}h1{text-align:center;font-size:clamp(25px,7vw,34px)}.sub{text-align:center;color:#b8b8c8}.panel{background:#202130;padding:17px;border-radius:16px;margin:15px 0}.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}label{display:block;font-size:14px;margin:12px 0 6px;color:#dedeee}input{width:100%;padding:12px;border-radius:10px;border:1px solid #55566c;background:#151622;color:#fff;font:inherit;min-height:46px}.primary{width:100%;margin-top:15px;padding:13px;border:0;border-radius:11px;background:#8df0b2;color:#10111a;font-size:16px;font-weight:800}.secondary{background:transparent;color:#ddd;border:1px solid #57586c;border-radius:10px;padding:10px}.stats{display:flex;justify-content:space-between;gap:8px}.stat{text-align:center;flex:1}.num{display:block;font-size:clamp(23px,6vw,30px);font-weight:800}.muted{color:#b8b8c8;font-size:12px}.track{height:12px;background:#414154;border-radius:20px;overflow:hidden;margin:14px 0 8px}#bar{width:0;height:100%;background:#8df0b2}#message{text-align:center;color:#8df0b2;font-weight:750;min-height:24px;line-height:1.4}.days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}.day{background:#292a3c;border:1px solid #414154;color:white;border-radius:12px;padding:10px 2px;min-height:72px;text-align:center;font:inherit}.day.done{background:#194c3b;border-color:#8df0b2}.day.today{outline:2px solid #ffc66d}.day strong,.day small{display:block}.day strong{font-size:13px}.day small{font-size:11px;margin-top:5px}.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}.status{text-align:center;color:#8df0b2;font-size:12px;min-height:18px}.footer{text-align:center;color:#b8b8c8;font-size:12px;line-height:1.5;margin:18px 0}.hidden{display:none!important}.error{color:#ffb3b3;font-size:13px}@media(max-width:390px){body{padding:11px}.days{grid-template-columns:repeat(4,minmax(0,1fr))}.row{grid-template-columns:1fr}}
+</style></head><body><main class="app">
+<h1>💀 Notice Period Escape</h1><p class="sub">Your countdown. Your rules. Your freedom. 🛫<br><span class="muted">Set your dates, then tap each day you survive.</span></p>
+<section class="panel" id="setup"><h2 style="margin:0 0 4px;font-size:20px">Set up your countdown</h2><p class="muted">Dates and checkmarks are saved in this browser on this device. Other visitors have their own separate tracker.</p>
+<div class="row"><div><label for="start">Notice period start date</label><input type="date" id="start" required></div><div><label for="end">Last working day / end date</label><input type="date" id="end" required></div></div><div class="error" id="error" role="alert"></div><button class="primary" id="startBtn" type="button">START MY COUNTDOWN 🚀</button></section>
+<section id="tracker" class="hidden"><div class="panel"><div class="stats"><div class="stat"><span class="num" id="left">0</span><span class="muted">Days left</span></div><div class="stat"><span class="num" id="done">0</span><span class="muted">Days deleted</span></div><div class="stat"><span class="num" id="pct">0%</span><span class="muted">Freedom</span></div></div><div class="track"><div id="bar"></div></div><div class="muted" id="dateText"></div><div class="actions"><button class="secondary" id="editBtn" type="button">Change dates</button><button class="secondary" id="resetBtn" type="button">Reset checkmarks</button></div></div><div class="panel"><div id="message" aria-live="polite">Your escape plan is loading... 😈</div></div><div class="days" id="days"></div><p class="status" id="status">Progress saves automatically on this device.</p></section>
+<p class="footer">☑️ Tap a day to complete it · Tap again to undo.<br>Progress is stored locally in your browser and isn't shared with other visitors.</p></main>
+<script>
+const KEY='noticeEscapeData_v2', jokes=["💀 DAY DELETED FROM THE MATRIX!","🚀 THIS DAY HAS BEEN YEETED!","⚰️ RIP, ANOTHER WORKDAY.","📉 NOTICE PERIOD: -1. YOU: +1.","😮‍💨 EXHALE. IT'S DONE.","🛫 FREEDOM LOADING...","🔥 CORPORATE SURVIVAL: +1 XP!","🥳 ONE LESS DAY IN THE SIMULATION!","🧘 YOUR EXIT ARC IS PROGRESSING.","👑 ANOTHER DAY CLOSER TO YOUR NEXT CHAPTER!"];
+const $=id=>document.getElementById(id);let cfg=null,completed=[];
+function dateStr(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function parse(s){if(!s)return null;let p=s.split('-').map(Number);return p.length===3?new Date(p[0],p[1]-1,p[2]):null}
+function fmt(d){return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})}
+function diff(a,b){return Math.round((new Date(b.getFullYear(),b.getMonth(),b.getDate())-new Date(a.getFullYear(),a.getMonth(),a.getDate()))/86400000)}
+function save(){try{localStorage.setItem(KEY,JSON.stringify({start:dateStr(cfg.start),end:dateStr(cfg.end),completed}));$('status').textContent='✅ Progress saved on this device.'}catch(e){$('status').textContent='⚠️ Browser storage unavailable; progress may not persist.'}}
+function showSetup(){ $('tracker').classList.add('hidden');$('setup').classList.remove('hidden');if(cfg){$('start').value=dateStr(cfg.start);$('end').value=dateStr(cfg.end)}}
+function start(){
+ const s=parse($('start').value),e=parse($('end').value);$('error').textContent='';
+ if(!s||!e){$('error').textContent='Please choose both dates.';return}
+ if(e<s){$('error').textContent='The end date must be on or after the start date.';return}
+ let total=diff(s,e)+1;if(total>3650){$('error').textContent='Please choose a period shorter than 10 years.';return}
+ const same=cfg&&dateStr(cfg.start)===dateStr(s)&&dateStr(cfg.end)===dateStr(e);
+ cfg={start:s,end:e,total};if(!same)completed=[];
+ $('setup').classList.add('hidden');$('tracker').classList.remove('hidden');save();render();$('message').textContent='😈 Your exit arc is officially underway.';
+}
+function render(){
+ const now=new Date();now.setHours(0,0,0,0);
+ $('done').textContent=completed.length;$('left').textContent=Math.max(0,cfg.total-completed.length);$('pct').textContent=Math.round(completed.length/cfg.total*100)+'%';$('bar').style.width=(completed.length/cfg.total*100)+'%';
+ $('dateText').textContent='Your period: '+fmt(cfg.start)+' – '+fmt(cfg.end)+' · Today: '+fmt(now)+' · '+cfg.total+' calendar days';
+ $('days').innerHTML='';
+ for(let n=0;n<cfg.total;n++){let d=new Date(cfg.start);d.setDate(d.getDate()+n);let done=completed.includes(n),b=document.createElement('button');b.type='button';b.className='day'+(done?' done':'')+(d.getTime()===now.getTime()?' today':'');b.innerHTML='<strong>'+(done?'☑️ ':'⬜ ')+'Day '+(n+1)+'</strong><small>'+fmt(d)+'</small>';b.addEventListener('click',()=>toggle(n));$('days').appendChild(b)}
+}
+function toggle(n){if(completed.includes(n)){completed=completed.filter(x=>x!==n);$('message').textContent='↩️ Day restored. No worries.'}else{completed.push(n);$('message').textContent=jokes[Math.floor(Math.random()*jokes.length)]}save();render()}
+$('startBtn').addEventListener('click',start);$('editBtn').addEventListener('click',showSetup);
+$('resetBtn').addEventListener('click',()=>{if(confirm('Reset all checkmarks for this countdown?')){completed=[];save();render();$('message').textContent='🧹 Fresh start. Your freedom arc continues.'}});
+try{let old=JSON.parse(localStorage.getItem(KEY)||'null');if(old){let s=parse(old.start),e=parse(old.end);if(s&&e&&e>=s){cfg={start:s,end:e,total:diff(s,e)+1};completed=Array.isArray(old.completed)?[...new Set(old.completed.filter(n=>Number.isInteger(n)&&n>=0&&n<cfg.total))]:[];$('setup').classList.add('hidden');$('tracker').classList.remove('hidden');render()}}}catch(e){}
+if(!cfg){let t=new Date(),end=new Date(t);end.setDate(end.getDate()+89);$('start').value=dateStr(t);$('end').value=dateStr(end)}
+if('serviceWorker'in navigator&&location.protocol.startsWith('http'))addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+</script></body></html>
